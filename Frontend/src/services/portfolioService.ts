@@ -21,5 +21,14 @@ export const portfolioService = {
     }
   },
 
+  getAllPortfolios: async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.PORTFOLIO.GET_ALL);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getAllPortfolios:", error);
+      throw error;
+    }
+  }
 
 };

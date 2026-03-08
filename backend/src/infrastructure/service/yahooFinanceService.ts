@@ -28,18 +28,4 @@ export class YahooFinanceService {
 }
 
 
-async function run() {
-
-  const stocks = ["TCS","INFY","RELIANCE","HDFCBANK"];
-
-  for (const stock of stocks) {
-
-    const cmp = await YahooFinanceService.getCMP(stock);
-
-    console.log(stock, "CMP:", cmp);
-
-  }
-
-}
-
-run();
+// Removed auto-run from integration

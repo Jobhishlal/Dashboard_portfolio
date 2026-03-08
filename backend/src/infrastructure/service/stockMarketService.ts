@@ -82,36 +82,3 @@ export class StockMarketService {
 
 }
 
-async function run() {
-
-  const stocks = ["TCS", "INFY", "RELIANCE", "HDFCBANK"];
-
-  const browser = await puppeteer.launch({ headless: true });
-
-  const page = await browser.newPage();
-
-  await page.setUserAgent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36"
-  );
-
-  for (const stock of stocks) {
-
-    const fundamentals =
-      await StockMarketService.getStockData(page, stock);
-
-    const cmp =
-      await YahooFinanceService.getCMP(stock);
-
-    console.log(stock, {
-      cmp,
-      peRatio: fundamentals?.peRatio,
-      eps: fundamentals?.eps
-    });
-
-  }
-
-  await browser.close();
-
-}
-
-run();
