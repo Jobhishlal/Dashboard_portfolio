@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { XIcon } from 'lucide-react'
 import { Stock, initialHoldings } from '../data/PortFolioData'
@@ -9,7 +9,7 @@ interface AddStockModalProps {
   onAdd: (stock: Omit<Stock, 'id' | 'cmp' | 'peRatio' | 'eps'>) => Promise<void> | void
 }
 
-export function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
+export const AddStockModal = memo(function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
   const [formData, setFormData] = useState({
     symbol: '',
     name: '',
@@ -75,7 +75,7 @@ export function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
         sector: formData.sector,
       })
       
-      setSuccessMsg("Asset injected flawlessly!")
+      setSuccessMsg("Completed successfully")
       
       setTimeout(() => {
         setFormData({
@@ -88,7 +88,7 @@ export function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
         })
         setSuccessMsg(null)
         onClose()
-      }, 1500)
+      }, 2000)
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to inject asset. Please try again.')
     } finally {
@@ -160,7 +160,7 @@ export function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
                   >
                     <p className="text-sm font-medium">{error}</p>
                     <button type="button" onClick={() => setError(null)} className="text-red-500 hover:text-red-400">
-                      &times;
+                      <XIcon className="w-4 h-4" />
                     </button>
                   </motion.div>
                 )}
@@ -172,7 +172,7 @@ export function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
                   >
                     <p className="text-sm font-medium">{successMsg}</p>
                     <button type="button" onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-400">
-                      &times;
+                      <XIcon className="w-4 h-4" />
                     </button>
                   </motion.div>
                 )}
@@ -315,4 +315,4 @@ export function AddStockModal({ isOpen, onClose, onAdd }: AddStockModalProps) {
       )}
     </AnimatePresence>
   )
-}
+})

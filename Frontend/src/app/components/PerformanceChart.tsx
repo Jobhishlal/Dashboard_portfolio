@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import {
   AreaChart,
   Area,
@@ -13,7 +13,7 @@ import { formatCurrency } from '../utils/Formatters'
 interface PerformanceChartProps {
   data: PerformanceData[]
 }
-export function PerformanceChart({ data }: PerformanceChartProps) {
+export const PerformanceChart = memo(function PerformanceChart({ data }: PerformanceChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -44,7 +44,7 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
         Portfolio Performance
       </h3>
       <div className="flex-1 w-full min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <AreaChart
             data={data}
             margin={{
@@ -115,4 +115,4 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
       </div>
     </div>
   )
-}
+})

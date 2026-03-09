@@ -39,111 +39,56 @@ export interface PerformanceData {
 }
 
 export const initialHoldings: Stock[] = [
-  {
-    id: '1',
-    symbol: 'RELIANCE',
-    name: 'Reliance Industries',
-    purchasePrice: 2450.5,
-    quantity: 100,
-    exchange: 'NSE',
-    sector: 'Energy',
-    cmp: 2950.0,
-    peRatio: 28.5,
-    eps: 103.4,
-  },
-  {
-    id: '2',
-    symbol: 'TCS',
-    name: 'Tata Consultancy Services',
-    purchasePrice: 3200.0,
-    quantity: 50,
-    exchange: 'NSE',
-    sector: 'Technology',
-    cmp: 4100.25,
-    peRatio: 32.1,
-    eps: 127.8,
-  },
-  {
-    id: '3',
-    symbol: 'HDFCBANK',
-    name: 'HDFC Bank',
-    purchasePrice: 1650.0,
-    quantity: 200,
-    exchange: 'NSE',
-    sector: 'Finance',
-    cmp: 1420.5,
-    peRatio: 15.2,
-    eps: 93.5,
-  },
-  {
-    id: '4',
-    symbol: 'INFY',
-    name: 'Infosys',
-    purchasePrice: 1450.75,
-    quantity: 150,
-    exchange: 'NSE',
-    sector: 'Technology',
-    cmp: 1680.0,
-    peRatio: 24.8,
-    eps: 67.2,
-  },
-  {
-    id: '5',
-    symbol: 'ITC',
-    name: 'ITC Limited',
-    purchasePrice: 380.0,
-    quantity: 500,
-    exchange: 'NSE',
-    sector: 'Consumer',
-    cmp: 425.6,
-    peRatio: 26.4,
-    eps: 16.1,
-  },
-  {
-    id: '6',
-    symbol: 'BHARTIARTL',
-    name: 'Bharti Airtel',
-    purchasePrice: 850.0,
-    quantity: 120,
-    exchange: 'NSE',
-    sector: 'Technology',
-    cmp: 1150.0,
-    peRatio: 45.2,
-    eps: 25.4,
-  },
-  {
-    id: '7',
-    symbol: 'ASIANPAINT',
-    name: 'Asian Paints',
-    purchasePrice: 3100.0,
-    quantity: 40,
-    exchange: 'NSE',
-    sector: 'Consumer',
-    cmp: 2850.0,
-    peRatio: 52.1,
-    eps: 54.7,
-  },
-  {
-    id: '8',
-    symbol: 'BAJFINANCE',
-    name: 'Bajaj Finance',
-    purchasePrice: 6500.0,
-    quantity: 25,
-    exchange: 'NSE',
-    sector: 'Finance',
-    cmp: 7200.0,
-    peRatio: 38.5,
-    eps: 187.0,
-  },
+  // Financial Sector
+  { id: '1', symbol: 'HDFCBANK', name: 'HDFC Bank', exchange: 'NSE', sector: 'Financial Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '2', symbol: 'BAJFINANCE', name: 'Bajaj Finance', exchange: 'NSE', sector: 'Financial Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '3', symbol: 'ICICIBANK', name: 'ICICI Bank', exchange: 'NSE', sector: 'Financial Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '4', symbol: 'BAJAJHFL', name: 'Bajaj Housing Finance', exchange: 'NSE', sector: 'Financial Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '5', symbol: 'SAVANI', name: 'Savani Financials', exchange: 'NSE', sector: 'Financial Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  
+  // Tech Sector
+  { id: '6', symbol: 'AFFLE', name: 'Affle India', exchange: 'NSE', sector: 'Tech Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '7', symbol: 'LTIM', name: 'LTI Mindtree', exchange: 'NSE', sector: 'Tech Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '8', symbol: 'KPITTECH', name: 'KPIT Tech', exchange: 'NSE', sector: 'Tech Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '9', symbol: 'TATATECH', name: 'Tata Tech', exchange: 'NSE', sector: 'Tech Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '10', symbol: 'BLSE', name: 'BLS E-Services', exchange: 'NSE', sector: 'Tech Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '11', symbol: 'TANLA', name: 'Tanla Platforms', exchange: 'NSE', sector: 'Tech Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  
+  // Consumer
+  { id: '12', symbol: 'DMART', name: 'Avenue Supermarts (Dmart)', exchange: 'NSE', sector: 'Consumer', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '13', symbol: 'TATACONSUM', name: 'Tata Consumer Products', exchange: 'NSE', sector: 'Consumer', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '14', symbol: 'PIDILITIND', name: 'Pidilite Industries', exchange: 'NSE', sector: 'Consumer', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  
+  // Power
+  { id: '15', symbol: 'TATAPOWER', name: 'Tata Power', exchange: 'NSE', sector: 'Power', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '16', symbol: 'KPIGREEN', name: 'KPI Green Energy', exchange: 'NSE', sector: 'Power', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '17', symbol: 'SUZLON', name: 'Suzlon Energy', exchange: 'NSE', sector: 'Power', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '18', symbol: 'GENSOL', name: 'Gensol Engineering', exchange: 'NSE', sector: 'Power', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  
+  // Pipe Sector
+  { id: '19', symbol: 'HARIOMPIPE', name: 'Hariom Pipe Industries', exchange: 'NSE', sector: 'Pipe Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '20', symbol: 'ASTRAL', name: 'Astral Limited', exchange: 'NSE', sector: 'Pipe Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  { id: '21', symbol: 'POLYCAB', name: 'Polycab India', exchange: 'NSE', sector: 'Pipe Sector', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
+  
+  // Others
+  { id: '22', symbol: 'CLEAN', name: 'Clean Science & Technology', exchange: 'NSE', sector: 'Others', purchasePrice: 0, quantity: 0, cmp: 0, peRatio: 0, eps: 0 },
 ]
 
 export const sectorColors: Record<string, string> = {
-  Technology: '#3b82f6',
-  Finance: '#8b5cf6', 
-  Energy: '#f59e0b', 
-  Healthcare: '#10b981',
-  Consumer: '#ec4899',
+  'Financial Sector': '#8b5cf6', // Deep Purple
+  'Finance': '#9333ea',          // Bright Purple
+  'Tech Sector': '#0ea5e9',      // Sky Blue
+  'Technology': '#2563eb',       // Royal Blue
+  'Consumer': '#db2777',         // Pink
+  'Power': '#eab308',            // Gold/Yellow
+  'Pipe Sector': '#059669',      // Dark Emerald
+  'Pipe': '#10b981',             // Emerald Green
+  'Others': '#475569',           // Slate
+  'Energy': '#f97316',           // Orange
+  'Healthcare': '#dc2626',       // Red
 }
+
+
 
 export const performanceTimeline: PerformanceData[] = [
   { month: 'Jan', value: 1150000, investment: 1100000 },

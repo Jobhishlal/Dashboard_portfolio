@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import {
   PieChart,
   Pie,
@@ -13,7 +13,7 @@ interface SectorChartProps {
   data: SectorAllocation[]
   totalValue: number
 }
-export function SectorChart({ data, totalValue }: SectorChartProps) {
+export const SectorChart = memo(function SectorChart({ data, totalValue }: SectorChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
@@ -38,7 +38,7 @@ export function SectorChart({ data, totalValue }: SectorChartProps) {
         Sector Allocation
       </h3>
       <div className="flex-1 w-full min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <PieChart>
             <Pie
               data={data}
@@ -76,4 +76,4 @@ export function SectorChart({ data, totalValue }: SectorChartProps) {
       </div>
     </div>
   )
-}
+})

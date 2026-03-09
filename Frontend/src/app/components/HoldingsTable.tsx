@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, memo } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowUpDownIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon } from 'lucide-react'
 import { Stock } from '../data/PortFolioData'
@@ -7,6 +7,10 @@ import { formatCurrency, formatPercentage, formatNumber } from '../utils/Formatt
 interface HoldingsTableProps {
   holdings: Stock[]
   totalValue: number
+  currentPage: number
+  totalPages: number
+  totalItems: number
+  onPageChange: (page: number) => void
 }
 
 type SortField =
@@ -18,7 +22,14 @@ type SortField =
   
 type SortDirection = 'asc' | 'desc'
 
-export function HoldingsTable({ holdings, totalValue }: HoldingsTableProps) {
+export const HoldingsTable = memo(function HoldingsTable({ 
+  holdings, 
+  totalValue, 
+  currentPage, 
+  totalPages, 
+  totalItems, 
+  onPageChange 
+}: HoldingsTableProps) {
   const [sortField, setSortField] = useState<SortField>('presentValue')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [groupBySector, setGroupBySector] = useState(true)
@@ -366,6 +377,56 @@ export function HoldingsTable({ holdings, totalValue }: HoldingsTableProps) {
           </tbody>
         </table>
       </div>
+      <div className="p-4 border-t border-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-zinc-950/20">
+        <div className="text-sm text-fintech-muted">
+          Showing <span className="text-white font-medium">{holdings.length}</span> of <span className="text-white font-medium">{totalItems}</span> assets
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-bold"
+          >
+            Previous
+          </button>
+          
+          <div className="flex items-center gap-1">
+            {[...Array(totalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              // Only show a subset of pages if there are many
+              if (totalPages > 5) {
+                if (pageNum !== 1 && pageNum !== totalPages && Math.abs(pageNum - currentPage) > 1) {
+                  if (pageNum === 2 || pageNum === totalPages - 1) return <span key={pageNum} className="text-zinc-600 px-1">...</span>;
+                  return null;
+                }
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => onPageChange(pageNum)}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border ${
+                    currentPage === pageNum 
+                      ? 'bg-fintech-accent text-white border-fintech-accent shadow-lg shadow-fintech-accent/20' 
+                      : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          
+          <button
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs font-bold"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   )
-}
+})

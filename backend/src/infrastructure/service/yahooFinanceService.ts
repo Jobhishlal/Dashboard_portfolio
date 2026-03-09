@@ -28,4 +28,4 @@ export class YahooFinanceService {
 }
 
 
-// Removed auto-run from integration
+

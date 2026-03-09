@@ -14,7 +14,6 @@ export class StockMarketService {
       console.log(`Navigating to ${url}...`);
       await page.goto(url, { waitUntil: "networkidle2" });
 
-      // Important: Get the whole text for analysis
       const text = await page.evaluate(() => document.body.innerText);
 
       const price = await this.extractPrice(page);
@@ -44,12 +43,11 @@ export class StockMarketService {
     try {
         const parts = text.split(/P\/E RATIO/i);
         if (parts.length > 1) {
-            // Take the block between P/E ratio and Dividend Yield
+         
             const block = parts[1].split(/DIVIDEND YIELD/i)[0];
             const matches = block.match(/[\d,.]+/g);
             if (matches) {
-                // Return the last number in this block (the value)
-                return parseFloat(matches[matches.length - 1].replace(/,/g, ""));
+  return parseFloat(matches[matches.length - 1].replace(/,/g, ""));
             }
         }
     } catch (e) {}
@@ -57,13 +55,12 @@ export class StockMarketService {
   }
 
   static parseEPS(text: string, price: number | null, peRatio: number | null) {
-      // 1. Try to find the EPS label directly
+    
       const match = text.match(/\nEPS\n([\d,.]+)/i) || text.match(/EPS\s+₹?([\d,.]+)/i);
       if (match) {
           return parseFloat(match[1].replace(/,/g, ""));
       }
 
-      // 2. Fallback to calculation if Price and PE are present
       if (price && peRatio && peRatio > 0) {
           return parseFloat((price / peRatio).toFixed(2));
       }
@@ -72,7 +69,7 @@ export class StockMarketService {
   }
 }
 
-// run script
+
 StockMarketService.getStockData().then(data => {
   console.log("Final Scraped Data:", data);
 });

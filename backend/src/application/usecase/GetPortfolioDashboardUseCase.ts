@@ -20,6 +20,16 @@ export class PortfolioCreateUsecase implements ICreatePortfolioUseCase{
             throw new Error("quantity must be greaterthan 0")
         }
 
+        const existingPortfolios = await this._portfolio.findAll();
+        const isDuplicate = existingPortfolios.some(p => 
+            p.symbol === data.symbol && 
+            p.purchasePrice === data.purchasePrice && 
+            p.quantity === data.quantity
+        );
+
+        if (isDuplicate) {
+            throw new Error("Duplicate entry: A portfolio asset with the exact same symbol, purchase price, and quantity already exists.");
+        }
 
         const values = await this._portfolio.create(data)
 

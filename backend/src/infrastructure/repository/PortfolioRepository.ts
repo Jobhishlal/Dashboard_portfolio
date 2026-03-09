@@ -12,10 +12,20 @@ export class PortFolioDatas implements IPortfolioDatabaseinterface{
         return PortfolioMapper.toDomain(document)
     }
    
-     async findAll(): Promise<Portfolio[]> {
-         const doc = await PortfolioModel.find()
-         return doc.map(doc=>PortfolioMapper.toDomain(doc))
-          
+     async findAll(page?: number, limit?: number): Promise<Portfolio[]> {
+         let query = PortfolioModel.find();
+         
+         if (page && limit) {
+             const skip = (page - 1) * limit;
+             query = query.skip(skip).limit(limit);
+         }
+         
+         const doc = await query;
+         return doc.map(doc => PortfolioMapper.toDomain(doc));
+     }
+
+     async count(): Promise<number> {
+         return await PortfolioModel.countDocuments();
      }
      async findBysymbol(symbol: string): Promise<Portfolio | null> {
         const doc  = await PortfolioModel.findOne({symbol})

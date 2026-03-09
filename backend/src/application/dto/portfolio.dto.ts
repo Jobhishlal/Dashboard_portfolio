@@ -31,3 +31,11 @@ export interface IPortfolioDashboardResponseDTO {
   eps: number;
   sector: string;
 }
+
+export interface IPaginatedPortfolioResponseDTO {
+  data: IPortfolioDashboardResponseDTO[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

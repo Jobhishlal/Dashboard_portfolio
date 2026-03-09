@@ -1,5 +1,5 @@
-import { IPortfolioDashboardResponseDTO } from "../../dto/portfolio.dto";
+import { IPaginatedPortfolioResponseDTO } from "../../dto/portfolio.dto";
 
 export interface IGetAllPortfoliosUseCase {
-  execute(): Promise<IPortfolioDashboardResponseDTO[]>;
+  execute(page?: number, limit?: number): Promise<IPaginatedPortfolioResponseDTO>;
 }

@@ -1,4 +1,4 @@
-import React, { Children } from 'react'
+import React, { Children, memo } from 'react'
 import { motion, Variants } from 'framer-motion'
 import {
   WalletIcon,
@@ -12,7 +12,7 @@ import { formatCurrency, formatPercentage } from '../utils/Formatters'
 interface SummaryCardsProps {
   summary: PortfolioSummary
 }
-export function SummaryCards({ summary }: SummaryCardsProps) {
+export const SummaryCards = memo(function SummaryCards({ summary }: SummaryCardsProps) {
   const isProfit = summary.totalGainLoss >= 0
   const container: Variants = {
     hidden: {
@@ -150,4 +150,4 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       </motion.div>
     </motion.div>
   )
-}
+})
