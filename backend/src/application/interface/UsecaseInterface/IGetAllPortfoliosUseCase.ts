@@ -1,3 +1,5 @@
+import { IPortfolioDashboardResponseDTO } from "../../dto/portfolio.dto";
+
 export interface IGetAllPortfoliosUseCase {
-  execute(): Promise<any[]>;
+  execute(): Promise<IPortfolioDashboardResponseDTO[]>;
 }

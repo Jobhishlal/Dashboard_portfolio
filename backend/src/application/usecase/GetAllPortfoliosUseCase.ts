@@ -2,12 +2,13 @@ import { IPortfolioDatabaseinterface } from "../interface/RepositoryInterface/IP
 import { IGetAllPortfoliosUseCase } from "../interface/UsecaseInterface/IGetAllPortfoliosUseCase";
 import { StockMarketService } from "../../infrastructure/service/stockMarketService";
 import { YahooFinanceService } from "../../infrastructure/service/yahooFinanceService";
+import { IPortfolioDashboardResponseDTO } from "../dto/portfolio.dto";
 import puppeteer from "puppeteer";
 
 export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
     constructor(private readonly _portfolioRepo: IPortfolioDatabaseinterface) {}
 
-    async execute(): Promise<any[]> {
+    async execute(): Promise<IPortfolioDashboardResponseDTO[]> {
         
         const portfolios = await this._portfolioRepo.findAll();
         
@@ -23,22 +24,26 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
 
         const liveDataMap: Record<string, { cmp: number; peRatio: number | null; eps: number | null }> = {};
 
-        for (const p of portfolios) {
-            if (!liveDataMap[p.symbol]) {
-                const cmp = await YahooFinanceService.getCMP(p.symbol);
-                const fundamentals = await StockMarketService.getStockData(page, p.symbol, p.exchange);
-                
-                liveDataMap[p.symbol] = {
-                    cmp: cmp || fundamentals?.price || p.purchasePrice,
-                    peRatio: fundamentals?.peRatio || null,
-                    eps: fundamentals?.eps || null
-                };
+        try {
+            for (const p of portfolios) {
+                if (!liveDataMap[p.symbol]) {
+                    const cmp = await YahooFinanceService.getCMP(p.symbol);
+                    const fundamentals = await StockMarketService.getStockData(page, p.symbol, p.exchange);
+                    
+                    liveDataMap[p.symbol] = {
+                        cmp: cmp || fundamentals?.price || p.purchasePrice,
+                        peRatio: fundamentals?.peRatio || null,
+                        eps: fundamentals?.eps || null
+                    };
+                }
             }
+        } catch (error) {
+            console.error("Error fetching live data:", error);
+        } finally {
+            await browser.close();
         }
 
-        await browser.close();
-
-        const responseData = portfolios.map(p => {
+        const responseData: IPortfolioDashboardResponseDTO[] = portfolios.map(p => {
             const liveData = liveDataMap[p.symbol];
             const cmp = liveData?.cmp || p.purchasePrice; 
             

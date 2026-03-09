@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowUpDownIcon, ChevronUpIcon, ChevronDownIcon, TrendingUpIcon, TrendingDownIcon } from 'lucide-react'
+import { ArrowUpDownIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon } from 'lucide-react'
 import { Stock } from '../data/PortFolioData'
 import { formatCurrency, formatPercentage, formatNumber } from '../utils/Formatters'
 
@@ -21,6 +21,7 @@ type SortDirection = 'asc' | 'desc'
 export function HoldingsTable({ holdings, totalValue }: HoldingsTableProps) {
   const [sortField, setSortField] = useState<SortField>('presentValue')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [groupBySector, setGroupBySector] = useState(true)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -75,6 +76,36 @@ export function HoldingsTable({ holdings, totalValue }: HoldingsTableProps) {
     })
   }, [holdings, sortField, sortDirection, totalValue])
 
+  const groupedHoldings = useMemo(() => {
+    if (!groupBySector) return null;
+    
+    const groups: Record<string, {
+      sector: string;
+      stocks: Stock[];
+      totalInvestment: number;
+      totalPresentValue: number;
+      totalGainLoss: number;
+    }> = {};
+
+    sortedHoldings.forEach(stock => {
+      const sector = stock.sector || 'Uncategorized';
+      if (!groups[sector]) {
+        groups[sector] = { sector, stocks: [], totalInvestment: 0, totalPresentValue: 0, totalGainLoss: 0 };
+      }
+      
+      const investment = stock.investment ?? (stock.purchasePrice * stock.quantity);
+      const presentValue = stock.presentValue ?? (stock.cmp * stock.quantity);
+      const gainLoss = stock.gainLoss ?? (presentValue - investment);
+      
+      groups[sector].stocks.push(stock);
+      groups[sector].totalInvestment += investment;
+      groups[sector].totalPresentValue += presentValue;
+      groups[sector].totalGainLoss += gainLoss;
+    });
+    
+    return Object.values(groups).sort((a,b) => b.totalPresentValue - a.totalPresentValue);
+  }, [sortedHoldings, groupBySector])
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDownIcon className="w-3 h-3 ml-1 text-fintech-muted opacity-50" />
     return sortDirection === 'asc' ? (
@@ -91,6 +122,17 @@ export function HoldingsTable({ holdings, totalValue }: HoldingsTableProps) {
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden">
       <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/20">
         <h3 className="text-xl font-bold text-white tracking-tight">Active Holdings</h3>
+        <button
+          onClick={() => setGroupBySector(!groupBySector)}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+            groupBySector 
+              ? 'bg-fintech-accent/20 text-fintech-accent border border-fintech-accent/30 hover:bg-fintech-accent/30' 
+              : 'bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700'
+          }`}
+        >
+          <LayersIcon className="w-4 h-4" />
+          {groupBySector ? 'Ungroup' : 'Group by Sector'}
+        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[1200px]">
@@ -154,76 +196,173 @@ export function HoldingsTable({ holdings, totalValue }: HoldingsTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-fintech-border font-mono text-sm">
-            {sortedHoldings.map((stock, index) => {
-              const investment = stock.investment ?? (stock.purchasePrice * stock.quantity)
-              const presentValue = stock.presentValue ?? (stock.cmp * stock.quantity)
-              const gainLoss = stock.gainLoss ?? (presentValue - investment)
-              const isProfit = gainLoss >= 0
-              const portfolioPct = stock.portfolioPercentage ?? ((presentValue / totalValue) * 100 || 0)
-              
-              return (
-                <motion.tr
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  key={stock.id || stock.symbol}
-                  className="hover:bg-fintech-bg/40 transition-colors group"
-                >
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex flex-col font-sans">
-                      <span className="font-semibold text-fintech-text">
-                        {stock.name || stock.symbol}
+            {groupBySector && groupedHoldings ? (
+              groupedHoldings.map((group) => (
+                <React.Fragment key={group.sector}>
+                  <tr className="bg-zinc-800/40 border-b border-t border-zinc-700/50">
+                    <td className="px-4 py-3 whitespace-nowrap" colSpan={3}>
+                      <span className="font-bold text-fintech-accent uppercase tracking-wider text-xs bg-fintech-accent/10 px-3 py-1.5 rounded-md">
+                        {group.sector}
                       </span>
-                      <span className="text-xs text-fintech-muted truncate max-w-[150px] font-mono mt-0.5">
-                        {stock.symbol}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
-                    {formatCurrency(stock.purchasePrice)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
-                    {formatNumber(stock.quantity)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
-                    {formatCurrency(investment)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-fintech-text">{portfolioPct.toFixed(2)}%</span>
-                      <div className="w-12 h-1.5 bg-fintech-bg rounded-full overflow-hidden hidden sm:block">
-                        <div
-                          className="h-full bg-fintech-accent rounded-full"
-                          style={{ width: `${Math.min(portfolioPct, 100)}%` }}
-                        />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-fintech-text font-bold">
+                      {formatCurrency(group.totalInvestment)}
+                    </td>
+                    <td colSpan={3}></td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-fintech-text font-bold">
+                      {formatCurrency(group.totalPresentValue)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                      <div className={`flex flex-col items-end ${group.totalGainLoss >= 0 ? 'text-fintech-profit' : 'text-fintech-loss'}`}>
+                        <span className="font-bold">{formatCurrency(group.totalGainLoss)}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right">
-                    <span className="text-[10px] px-2 py-1 rounded bg-zinc-800 text-fintech-muted font-bold tracking-wider">
-                      {stock.exchange}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
-                    {formatCurrency(stock.cmp)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
-                    {formatCurrency(presentValue)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right">
-                    <div className={`flex flex-col items-end ${isProfit ? 'text-fintech-profit' : 'text-fintech-loss'}`}>
-                      <span className="font-medium">{formatCurrency(gainLoss)}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
-                    {stock.peRatio ? stock.peRatio.toFixed(2) : '-'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
-                    {stock.eps ? stock.eps.toFixed(2) : '-'}
-                  </td>
-                </motion.tr>
-              )
-            })}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                  {group.stocks.map((stock, index) => {
+                    const investment = stock.investment ?? (stock.purchasePrice * stock.quantity)
+                    const presentValue = stock.presentValue ?? (stock.cmp * stock.quantity)
+                    const gainLoss = stock.gainLoss ?? (presentValue - investment)
+                    const isProfit = gainLoss >= 0
+                    const portfolioPct = stock.portfolioPercentage ?? ((presentValue / totalValue) * 100 || 0)
+                    
+                    return (
+                      <motion.tr
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        key={`${group.sector}-${stock.id || stock.symbol}`}
+                        className="hover:bg-fintech-bg/40 transition-colors group"
+                      >
+                        <td className="px-4 py-4 whitespace-nowrap pl-8">
+                          <div className="flex flex-col font-sans">
+                            <span className="font-semibold text-fintech-text">
+                              {stock.name || stock.symbol}
+                            </span>
+                            <span className="text-xs text-fintech-muted truncate max-w-[150px] font-mono mt-0.5">
+                              {stock.symbol}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                          {formatCurrency(stock.purchasePrice)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                          {formatNumber(stock.quantity)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
+                          {formatCurrency(investment)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-fintech-text">{portfolioPct.toFixed(2)}%</span>
+                            <div className="w-12 h-1.5 bg-fintech-bg rounded-full overflow-hidden hidden sm:block">
+                              <div
+                                className="h-full bg-fintech-accent rounded-full"
+                                style={{ width: `${Math.min(portfolioPct, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <span className="text-[10px] px-2 py-1 rounded bg-zinc-800 text-fintech-muted font-bold tracking-wider">
+                            {stock.exchange}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
+                          {formatCurrency(stock.cmp)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
+                          {formatCurrency(presentValue)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <div className={`flex flex-col items-end ${isProfit ? 'text-fintech-profit' : 'text-fintech-loss'}`}>
+                            <span className="font-medium">{formatCurrency(gainLoss)}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                          {stock.peRatio ? stock.peRatio.toFixed(2) : '-'}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                          {stock.eps ? stock.eps.toFixed(2) : '-'}
+                        </td>
+                      </motion.tr>
+                    )
+                  })}
+                </React.Fragment>
+              ))
+            ) : (
+              sortedHoldings.map((stock, index) => {
+                const investment = stock.investment ?? (stock.purchasePrice * stock.quantity)
+                const presentValue = stock.presentValue ?? (stock.cmp * stock.quantity)
+                const gainLoss = stock.gainLoss ?? (presentValue - investment)
+                const isProfit = gainLoss >= 0
+                const portfolioPct = stock.portfolioPercentage ?? ((presentValue / totalValue) * 100 || 0)
+                
+                return (
+                  <motion.tr
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    key={`all-${stock.id || stock.symbol}`}
+                    className="hover:bg-fintech-bg/40 transition-colors group"
+                  >
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex flex-col font-sans">
+                        <span className="font-semibold text-fintech-text">
+                          {stock.name || stock.symbol}
+                        </span>
+                        <span className="text-xs text-fintech-muted truncate max-w-[150px] font-mono mt-0.5">
+                          {stock.symbol}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                      {formatCurrency(stock.purchasePrice)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                      {formatNumber(stock.quantity)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
+                      {formatCurrency(investment)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-fintech-text">{portfolioPct.toFixed(2)}%</span>
+                        <div className="w-12 h-1.5 bg-fintech-bg rounded-full overflow-hidden hidden sm:block">
+                          <div
+                            className="h-full bg-fintech-accent rounded-full"
+                            style={{ width: `${Math.min(portfolioPct, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right">
+                      <span className="text-[10px] px-2 py-1 rounded bg-zinc-800 text-fintech-muted font-bold tracking-wider">
+                        {stock.exchange}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
+                      {formatCurrency(stock.cmp)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text font-medium">
+                      {formatCurrency(presentValue)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right">
+                      <div className={`flex flex-col items-end ${isProfit ? 'text-fintech-profit' : 'text-fintech-loss'}`}>
+                        <span className="font-medium">{formatCurrency(gainLoss)}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                      {stock.peRatio ? stock.peRatio.toFixed(2) : '-'}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-fintech-text">
+                      {stock.eps ? stock.eps.toFixed(2) : '-'}
+                    </td>
+                  </motion.tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>

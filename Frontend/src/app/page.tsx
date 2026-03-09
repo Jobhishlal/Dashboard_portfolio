@@ -18,13 +18,16 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchHoldings();
+    let timeoutId: NodeJS.Timeout;
 
-    const intervalId = setInterval(() => {
-      fetchHoldings();
-    }, 15000);
+    const pollHoldings = async () => {
+      await fetchHoldings();
+      timeoutId = setTimeout(pollHoldings, 60000); // 60 seconds
+    };
 
-    return () => clearInterval(intervalId);
+    pollHoldings();
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const fetchHoldings = async () => {
