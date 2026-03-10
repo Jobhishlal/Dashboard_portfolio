@@ -55,11 +55,26 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         });
 
         if (stocksToScrape.length > 0) {
-            const browser = await puppeteer.launch({
-                args: chromium.args,
-                executablePath: await chromium.executablePath(),
+            const isWindows = process.platform === 'win32';
+            const launchOptions: any = {
+                args: isWindows ? [] : chromium.args,
                 headless: true,
-            });
+            };
+
+            if (!isWindows) {
+                launchOptions.executablePath = await chromium.executablePath();
+            } else {
+                const paths = [
+                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+                    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+                ];
+                const fs = require('fs');
+                launchOptions.executablePath = paths.find(p => fs.existsSync(p));
+            }
+
+            const browser = await puppeteer.launch(launchOptions);
 
             try {
                 const page = await browser.newPage();

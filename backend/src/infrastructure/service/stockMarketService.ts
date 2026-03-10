@@ -12,11 +12,28 @@ export class StockMarketService {
     if (typeof pageOrTicker === 'string') {
       ticker = pageOrTicker;
       currentExchange = tickerOrExchange || "NSE";
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath(),
+
+      const isWindows = process.platform === 'win32';
+      const launchOptions: any = {
+        args: isWindows ? [] : chromium.args,
         headless: true,
-      });
+      };
+
+      if (!isWindows) {
+        launchOptions.executablePath = await chromium.executablePath();
+      } else {
+        // Common paths for Chrome or Edge on Windows
+        const paths = [
+          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+          'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+          'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+          'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+        ];
+        const fs = require('fs');
+        launchOptions.executablePath = paths.find(p => fs.existsSync(p));
+      }
+
+      browser = await puppeteer.launch(launchOptions);
       page = await browser.newPage();
     } else {
       page = pageOrTicker;
