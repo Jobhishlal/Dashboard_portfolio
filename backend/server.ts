@@ -15,6 +15,7 @@ import { SocketService } from './src/infrastructure/service/SocketService';
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 
 const portfolio = portfoliorouter
@@ -34,9 +35,6 @@ const server = http.createServer(app);
 const socketService = SocketService.getInstance();
 socketService.initialize(server);
 
-
-const PORT: number = parseInt(process.env.PORT || "5000", 10);
-
-server.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
