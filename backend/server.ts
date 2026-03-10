@@ -28,8 +28,8 @@ app.use(express.urlencoded({ extended: true }));
 
 connectDB();
 
-app.use('/dashboard',portfolio)
-app.use('/notifications', notificationRouter);
+app.use('/api/dashboard',portfolio)
+app.use('/api/notifications', notificationRouter);
 
 const server = http.createServer(app);
 const socketService = SocketService.getInstance();
