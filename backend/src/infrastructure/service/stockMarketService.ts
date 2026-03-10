@@ -1,16 +1,33 @@
-import puppeteer, { Page } from "puppeteer";
-import { YahooFinanceService } from "./yahooFinanceService";
+import puppeteer, { Page, Browser } from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 export class StockMarketService {
 
-  static async getStockData(page: Page, ticker: string, exchange: string = "NSE") {
+  static async getStockData(pageOrTicker: Page | string, tickerOrExchange?: string, exchange: string = "NSE") {
+    let page: Page;
+    let browser: Browser | null = null;
+    let ticker: string;
+    let currentExchange: string = exchange;
+
+    if (typeof pageOrTicker === 'string') {
+      ticker = pageOrTicker;
+      currentExchange = tickerOrExchange || "NSE";
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      });
+      page = await browser.newPage();
+    } else {
+      page = pageOrTicker;
+      ticker = tickerOrExchange!;
+    }
 
     try {
-
-      const url = `https://www.google.com/finance/quote/${ticker}:${exchange}`;
+      const url = `https://www.google.com/finance/quote/${ticker}:${currentExchange}`;
       console.log(`Scraping ${ticker}...`);
 
-      await page.goto(url, { waitUntil: "networkidle2" });
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
 
       const text = await page.evaluate(() => document.body.innerText);
 
@@ -18,10 +35,12 @@ export class StockMarketService {
       const peRatio = this.parsePERatio(text);
       const eps = this.parseEPS(text, price, peRatio);
 
+      if (browser) await browser.close();
+
       return { price, peRatio, eps };
 
     } catch (error) {
-
+      if (browser) await browser.close();
       console.error(`Error scraping ${ticker}`, error);
       return null;
 
@@ -81,4 +100,3 @@ export class StockMarketService {
   }
 
 }
-

@@ -3,7 +3,8 @@ import { IGetAllPortfoliosUseCase } from "../interface/UsecaseInterface/IGetAllP
 import { StockMarketService } from "../../infrastructure/service/stockMarketService";
 import { YahooFinanceService } from "../../infrastructure/service/yahooFinanceService";
 import { IPortfolioDashboardResponseDTO, IPaginatedPortfolioResponseDTO } from "../dto/portfolio.dto";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { ISendNotificationUseCase } from "./SendNotificationUseCase";
 
 export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
@@ -19,13 +20,13 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
     constructor(
         private readonly _portfolioRepo: IPortfolioDatabaseinterface,
         private readonly _sendNotificationUseCase?: ISendNotificationUseCase
-    ) {}
+    ) { }
 
     async execute(page: number = 1, limit: number = 10): Promise<IPaginatedPortfolioResponseDTO> {
-        
+
         const total = await this._portfolioRepo.count();
         const portfolios = await this._portfolioRepo.findAll(page, limit);
-        
+
         if (!portfolios || portfolios.length === 0) {
             return {
                 data: [],
@@ -36,13 +37,13 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
             };
         }
 
-        
-        const allPortfolios = await this._portfolioRepo.findAll(); 
+
+        const allPortfolios = await this._portfolioRepo.findAll();
         const totalInvestment = allPortfolios.reduce((sum, p) => sum + p.getInvestment(), 0);
 
         const liveDataMap: Record<string, { cmp: number; peRatio: number | null; eps: number | null }> = {};
-        
-        
+
+
         const now = Date.now();
         const stocksToScrape = portfolios.filter(p => {
             const cached = GetAllPortfoliosUseCase.cache[p.symbol];
@@ -54,24 +55,27 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         });
 
         if (stocksToScrape.length > 0) {
-            const browser = await puppeteer.launch({ headless: true });
-            
+            const browser = await puppeteer.launch({
+                args: chromium.args,
+                executablePath: await chromium.executablePath(),
+                headless: true,
+            });
+
             try {
                 const page = await browser.newPage();
-                await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36");
 
                 for (const p of stocksToScrape) {
                     if (!liveDataMap[p.symbol]) {
                         const cmp = await YahooFinanceService.getCMP(p.symbol);
                         const fundamentals = await StockMarketService.getStockData(page, p.symbol, p.exchange);
-                        
+
                         const newData = {
                             cmp: cmp || fundamentals?.price || p.purchasePrice,
                             peRatio: fundamentals?.peRatio || null,
                             eps: fundamentals?.eps || null,
                             lastUpdated: now
                         };
-                        
+
                         liveDataMap[p.symbol] = newData;
                         GetAllPortfoliosUseCase.cache[p.symbol] = newData;
                     }
@@ -85,12 +89,12 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
 
         const responseData: IPortfolioDashboardResponseDTO[] = portfolios.map(p => {
             const liveData = liveDataMap[p.symbol];
-            const cmp = liveData?.cmp || p.purchasePrice; 
-            
+            const cmp = liveData?.cmp || p.purchasePrice;
+
             return {
                 id: p.id,
                 symbol: p.symbol,
-                name: p.symbol, 
+                name: p.symbol,
                 purchasePrice: p.purchasePrice,
                 quantity: p.quantity,
                 investment: p.getInvestment(),
@@ -116,9 +120,9 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
                         'success'
                     );
                 } else if (prevCmp && p.cmp < prevCmp) {
-                    
+
                 }
-                
+
                 this.previousCmpMap[p.symbol] = p.cmp;
             }
         }
