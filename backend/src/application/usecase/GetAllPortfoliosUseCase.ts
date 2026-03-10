@@ -36,17 +36,13 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
             };
         }
 
-        // We still need all portfolios for totalInvestment and notifications if we want to be accurate,
-        // or we use some other way. For now, let's keep calculating dashboard stats based on the FULL data 
-        // to ensure notifications and portfolio percentage are correct, but ONLY scraping CMP for the current page.
-        // Actually, to follow SOLID and keep it clean, let's just paginate the DISPLAY data.
         
-        const allPortfolios = await this._portfolioRepo.findAll(); // Getting all for total investment calculation
+        const allPortfolios = await this._portfolioRepo.findAll(); 
         const totalInvestment = allPortfolios.reduce((sum, p) => sum + p.getInvestment(), 0);
 
         const liveDataMap: Record<string, { cmp: number; peRatio: number | null; eps: number | null }> = {};
         
-        // Find which stocks need fresh scraping
+        
         const now = Date.now();
         const stocksToScrape = portfolios.filter(p => {
             const cached = GetAllPortfoliosUseCase.cache[p.symbol];
@@ -109,7 +105,6 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
             };
         });
 
-        // Trigger notifications after mapping
         if (this._sendNotificationUseCase) {
             for (const p of responseData) {
                 const prevCmp = this.previousCmpMap[p.symbol];
@@ -121,10 +116,9 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
                         'success'
                     );
                 } else if (prevCmp && p.cmp < prevCmp) {
-                    // (Optional) Could notify drop, but user requested profit increases strictly
+                    
                 }
                 
-                // Keep track of new CMP
                 this.previousCmpMap[p.symbol] = p.cmp;
             }
         }
