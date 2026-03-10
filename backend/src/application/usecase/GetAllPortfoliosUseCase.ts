@@ -41,7 +41,7 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         const allPortfolios = await this._portfolioRepo.findAll();
         const totalInvestment = allPortfolios.reduce((sum, p) => sum + p.getInvestment(), 0);
 
-        const liveDataMap: Record<string, { cmp: number; peRatio: number | null; eps: number | null }> = {};
+        const liveDataMap: Record<string, { cmp: number; peRatio: number | null; eps: number | null; lastUpdated: number }> = {};
 
 
         const now = Date.now();
@@ -55,50 +55,72 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         });
 
         if (stocksToScrape.length > 0) {
-            const isWindows = process.platform === 'win32';
-            const launchOptions: any = {
-                args: isWindows ? [] : chromium.args,
-                headless: true,
-            };
-
-            if (!isWindows) {
-                launchOptions.executablePath = await chromium.executablePath();
-            } else {
-                const paths = [
-                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-                    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-                    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
-                ];
-                const fs = require('fs');
-                launchOptions.executablePath = paths.find(p => fs.existsSync(p));
-            }
-
-            const browser = await puppeteer.launch(launchOptions);
-
+            let browser: any;
             try {
+                const isWindows = process.platform === 'win32';
+                const launchOptions: any = {
+                    args: isWindows ? [] : [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+                    headless: true,
+                };
+
+                if (!isWindows) {
+                    launchOptions.executablePath = await chromium.executablePath();
+                } else {
+                    const paths = [
+                        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+                        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+                    ];
+                    const fs = require('fs');
+                    launchOptions.executablePath = paths.find(p => fs.existsSync(p));
+                }
+
+                browser = await puppeteer.launch(launchOptions);
                 const page = await browser.newPage();
 
                 for (const p of stocksToScrape) {
-                    if (!liveDataMap[p.symbol]) {
-                        const cmp = await YahooFinanceService.getCMP(p.symbol);
-                        const fundamentals = await StockMarketService.getStockData(page, p.symbol, p.exchange);
+                    try {
+                        if (!liveDataMap[p.symbol]) {
+                            const cmp = await YahooFinanceService.getCMP(p.symbol);
+                            const fundamentals = await StockMarketService.getStockData(page, p.symbol, p.exchange);
 
-                        const newData = {
-                            cmp: cmp || fundamentals?.price || p.purchasePrice,
-                            peRatio: fundamentals?.peRatio || null,
-                            eps: fundamentals?.eps || null,
+                            const newData = {
+                                cmp: cmp || fundamentals?.price || p.purchasePrice,
+                                peRatio: fundamentals?.peRatio || null,
+                                eps: fundamentals?.eps || null,
+                                lastUpdated: now
+                            };
+
+                            liveDataMap[p.symbol] = newData;
+                            GetAllPortfoliosUseCase.cache[p.symbol] = newData;
+                        }
+                    } catch (scrapeError) {
+                        console.error(`Error scraping ${p.symbol}:`, scrapeError);
+                        // Provide fallback for this specific stock so loop continues
+                        liveDataMap[p.symbol] = liveDataMap[p.symbol] || {
+                            cmp: p.purchasePrice,
+                            peRatio: null,
+                            eps: null,
                             lastUpdated: now
                         };
-
-                        liveDataMap[p.symbol] = newData;
-                        GetAllPortfoliosUseCase.cache[p.symbol] = newData;
                     }
                 }
             } catch (error) {
-                console.error("Error fetching live data:", error);
+                console.error("Critical error in live data scraping:", error);
+                // Fallback: Ensure all stocks have SOME data so the map operation later doesn't fail
+                for (const p of stocksToScrape) {
+                    if (!liveDataMap[p.symbol]) {
+                        liveDataMap[p.symbol] = {
+                            cmp: p.purchasePrice,
+                            peRatio: null,
+                            eps: null,
+                            lastUpdated: now
+                        };
+                    }
+                }
             } finally {
-                await browser.close();
+                if (browser) await browser.close();
             }
         }
 
