@@ -31,11 +31,12 @@ export class PortfolioManagementcontroller {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 10;
             const data = await this._getAll.execute(page, limit);
+            // console.log("data",data)
             res.status(StatusCode.OK).json({ success: true, message: SUCCESS_MESSAGES.CREATED, data });
         } catch (error: any) {
             console.log(error);
             const message = error instanceof Error ? error.message :ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
-            res.status(StatusCode.INTERNAL_SERVER_ERROR).json({ success: false, message });
+            res.status(StatusCode.INTERNAL_SERVER_ERROR).json({ success: false, message }); 
         }
     }
 }

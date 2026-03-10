@@ -72,4 +72,4 @@ export class StockMarketService {
 
 StockMarketService.getStockData().then(data => {
   console.log("Final Scraped Data:", data);
-});
+}); 

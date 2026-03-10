@@ -24,7 +24,15 @@ export default {
           lossBg: '#7f1d1d', // red-900
           accent: '#3b82f6', 
         }
-      }
+      },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s infinite',
+      },
     },
   },
   plugins: [],
