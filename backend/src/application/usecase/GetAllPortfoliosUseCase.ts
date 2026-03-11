@@ -12,7 +12,7 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         eps: number | null;
         lastUpdated: number;
     }> = {};
-    private static readonly CACHE_TTL_MS = 3600000; // 1 hour cache to reduce scraping
+    private static readonly CACHE_TTL_MS = 15000; // 15 seconds cache for real-time updates
 
     constructor(
         private readonly _portfolioRepo: IPortfolioDatabaseinterface,
