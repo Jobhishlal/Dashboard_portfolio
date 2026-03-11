@@ -24,6 +24,7 @@ export class SendNotificationUseCase implements ISendNotificationUseCase {
             timestamp: savedNotification.timestamp.toISOString(),
             isRead: savedNotification.isRead
         };
+         console.log("notification",dto)
 
         this._socketService.emitNewNotification(dto);
         return dto;

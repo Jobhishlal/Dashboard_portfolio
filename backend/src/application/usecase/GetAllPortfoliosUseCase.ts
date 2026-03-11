@@ -100,14 +100,32 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         if (this._sendNotificationUseCase) {
             for (const p of responseData) {
                 const prevCmp = this.previousCmpMap[p.symbol];
-                if (prevCmp && p.cmp > prevCmp) {
+
+                if (prevCmp && p.cmp !== prevCmp) {
                     const diff = p.cmp - prevCmp;
-                    const profitInc = diff * p.quantity;
+                    const change = ((diff / prevCmp) * 100).toFixed(2);
+                    const type = diff > 0 ? 'success' : 'warning';
+                    const icon = diff > 0 ? '📈' : '📉';
+
                     void this._sendNotificationUseCase.execute(
-                        `${p.symbol} CMP increased to ₹${p.cmp}! Profit increased by ₹${profitInc.toFixed(2)}.`,
-                        'success'
+                        `${icon} ${p.symbol} price moved by ${change}% to ₹${p.cmp}!`,
+                        type
                     );
+                } else if (!prevCmp) {
+                    // Initial notification for stocks with significant profit or loss (> 5%)
+                    const diffFromPurchase = p.cmp - p.purchasePrice;
+                    const profitPct = (diffFromPurchase / p.purchasePrice) * 100;
+
+                    if (Math.abs(profitPct) > 5) {
+                        const type = profitPct > 0 ? 'success' : 'warning';
+                        const emoji = profitPct > 0 ? '🔥' : '⚠️';
+                        void this._sendNotificationUseCase.execute(
+                            `${emoji} ${p.symbol} performance: ${profitPct.toFixed(2)}% (₹${p.gainLoss.toFixed(2)})`,
+                            type
+                        );
+                    }
                 }
+
                 this.previousCmpMap[p.symbol] = p.cmp;
             }
         }
