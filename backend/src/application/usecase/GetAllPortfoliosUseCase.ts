@@ -1,10 +1,7 @@
 import { IPortfolioDatabaseinterface } from "../interface/RepositoryInterface/IPortfolioInterface";
 import { IGetAllPortfoliosUseCase } from "../interface/UsecaseInterface/IGetAllPortfoliosUseCase";
 import { StockMarketService } from "../../infrastructure/service/stockMarketService";
-import { YahooFinanceService } from "../../infrastructure/service/yahooFinanceService";
 import { IPortfolioDashboardResponseDTO, IPaginatedPortfolioResponseDTO } from "../dto/portfolio.dto";
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
 import { ISendNotificationUseCase } from "./SendNotificationUseCase";
 
 export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
@@ -15,7 +12,7 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
         eps: number | null;
         lastUpdated: number;
     }> = {};
-    private static readonly CACHE_TTL_MS = 60000; // 60 seconds cache
+    private static readonly CACHE_TTL_MS = 3600000; // 1 hour cache to reduce scraping
 
     constructor(
         private readonly _portfolioRepo: IPortfolioDatabaseinterface,
@@ -37,92 +34,46 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
             };
         }
 
-
         const allPortfolios = await this._portfolioRepo.findAll();
         const totalInvestment = allPortfolios.reduce((sum, p) => sum + p.getInvestment(), 0);
 
         const liveDataMap: Record<string, { cmp: number; peRatio: number | null; eps: number | null; lastUpdated: number }> = {};
-
-
         const now = Date.now();
-        const stocksToScrape = portfolios.filter(p => {
+
+        // Process all portfolios in parallel for speed
+        const scrapePromises = portfolios.map(async (p) => {
             const cached = GetAllPortfoliosUseCase.cache[p.symbol];
+
             if (cached && (now - cached.lastUpdated) < GetAllPortfoliosUseCase.CACHE_TTL_MS) {
                 liveDataMap[p.symbol] = cached;
-                return false;
+                return;
             }
-            return true;
-        });
 
-        if (stocksToScrape.length > 0) {
-            let browser: any;
             try {
-                const isWindows = process.platform === 'win32';
-                const launchOptions: any = {
-                    args: isWindows ? [] : [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-                    headless: true,
+                // Use the new fast StockMarketService
+                const fundamentals = await StockMarketService.getStockData(p.symbol);
+
+                const newData = {
+                    cmp: fundamentals?.price || p.purchasePrice,
+                    peRatio: fundamentals?.peRatio || null,
+                    eps: fundamentals?.eps || null,
+                    lastUpdated: now
                 };
 
-                if (!isWindows) {
-                    launchOptions.executablePath = await chromium.executablePath();
-                } else {
-                    const paths = [
-                        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-                        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-                        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
-                    ];
-                    const fs = require('fs');
-                    launchOptions.executablePath = paths.find(p => fs.existsSync(p));
-                }
-
-                browser = await puppeteer.launch(launchOptions);
-                const page = await browser.newPage();
-
-                for (const p of stocksToScrape) {
-                    try {
-                        if (!liveDataMap[p.symbol]) {
-                            const cmp = await YahooFinanceService.getCMP(p.symbol);
-                            const fundamentals = await StockMarketService.getStockData(page, p.symbol, p.exchange);
-
-                            const newData = {
-                                cmp: cmp || fundamentals?.price || p.purchasePrice,
-                                peRatio: fundamentals?.peRatio || null,
-                                eps: fundamentals?.eps || null,
-                                lastUpdated: now
-                            };
-
-                            liveDataMap[p.symbol] = newData;
-                            GetAllPortfoliosUseCase.cache[p.symbol] = newData;
-                        }
-                    } catch (scrapeError) {
-                        console.error(`Error scraping ${p.symbol}:`, scrapeError);
-                        // Provide fallback for this specific stock so loop continues
-                        liveDataMap[p.symbol] = liveDataMap[p.symbol] || {
-                            cmp: p.purchasePrice,
-                            peRatio: null,
-                            eps: null,
-                            lastUpdated: now
-                        };
-                    }
-                }
+                liveDataMap[p.symbol] = newData;
+                GetAllPortfoliosUseCase.cache[p.symbol] = newData;
             } catch (error) {
-                console.error("Critical error in live data scraping:", error);
-                // Fallback: Ensure all stocks have SOME data so the map operation later doesn't fail
-                for (const p of stocksToScrape) {
-                    if (!liveDataMap[p.symbol]) {
-                        liveDataMap[p.symbol] = {
-                            cmp: p.purchasePrice,
-                            peRatio: null,
-                            eps: null,
-                            lastUpdated: now
-                        };
-                    }
-                }
-            } finally {
-                if (browser) await browser.close();
+                console.error(`Error fetching live data for ${p.symbol}:`, error);
+                liveDataMap[p.symbol] = {
+                    cmp: p.purchasePrice,
+                    peRatio: null,
+                    eps: null,
+                    lastUpdated: now
+                };
             }
-        }
+        });
+
+        await Promise.all(scrapePromises);
 
         const responseData: IPortfolioDashboardResponseDTO[] = portfolios.map(p => {
             const liveData = liveDataMap[p.symbol];
@@ -156,10 +107,7 @@ export class GetAllPortfoliosUseCase implements IGetAllPortfoliosUseCase {
                         `${p.symbol} CMP increased to ₹${p.cmp}! Profit increased by ₹${profitInc.toFixed(2)}.`,
                         'success'
                     );
-                } else if (prevCmp && p.cmp < prevCmp) {
-
                 }
-
                 this.previousCmpMap[p.symbol] = p.cmp;
             }
         }
